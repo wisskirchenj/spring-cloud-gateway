@@ -47,6 +47,7 @@ import org.springframework.cloud.gateway.server.mvc.predicate.PredicateDiscovere
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.util.StringUtils;
@@ -56,6 +57,12 @@ import org.springframework.web.client.RestClient;
 @ConditionalOnProperty(name = "spring.cloud.gateway.mvc.enabled", matchIfMissing = true)
 @Import(GatewayMvcPropertiesBeanDefinitionRegistrar.class)
 public class GatewayServerMvcAutoConfiguration {
+
+	@Bean
+	public static GatewayMvcPropertiesBeanDefinitionRegistrar gatewayMvcPropertiesBeanDefinitionRegistrar(
+			Environment env) {
+		return new GatewayMvcPropertiesBeanDefinitionRegistrar(env);
+	}
 
 	@Bean
 	public static ArgumentSupplierBeanPostProcessor argumentSupplierBeanPostProcessor(

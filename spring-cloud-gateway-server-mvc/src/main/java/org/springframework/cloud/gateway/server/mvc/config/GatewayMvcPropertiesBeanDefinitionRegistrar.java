@@ -112,14 +112,19 @@ public class GatewayMvcPropertiesBeanDefinitionRegistrar implements ImportBeanDe
 		// Uses this::routerFunctionHolderSupplier so when the bean is refreshed, that
 		// method is called again.
 		AbstractBeanDefinition routerFnProviderBeanDefinition = BeanDefinitionBuilder
-				.genericBeanDefinition(RouterFunctionHolder.class, this::routerFunctionHolderSupplier)
+				.rootBeanDefinition(RouterFunctionHolder.class)
+				.setFactoryMethodOnBean("routerFunctionHolderSupplier", "gatewayMvcPropertiesBeanDefinitionRegistrar")
 				.getBeanDefinition();
 		// TODO: opt out of refresh scope?
 		// Puts the RouterFunctionHolder in refresh scope
 		BeanDefinitionHolder holder = new BeanDefinitionHolder(routerFnProviderBeanDefinition,
 				"gatewayRouterFunctionHolder");
 		BeanDefinitionHolder proxy = ScopedProxyUtils.createScopedProxy(holder, registry, true);
-		routerFnProviderBeanDefinition.setScope("refresh");
+		if (registry.containsBeanDefinition("refreshScope")) {
+			log.warn("Refresh scope is enabled. This is not supported in AOT mode. "
+					+ "Set spring.cloud.refresh.enabled=false if you want to run your app as native image.");
+			routerFnProviderBeanDefinition.setScope("refresh");
+		}
 		if (registry.containsBeanDefinition(proxy.getBeanName())) {
 			registry.removeBeanDefinition(proxy.getBeanName());
 		}
@@ -134,7 +139,7 @@ public class GatewayMvcPropertiesBeanDefinitionRegistrar implements ImportBeanDe
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private RouterFunctionHolder routerFunctionHolderSupplier() {
+	RouterFunctionHolder routerFunctionHolderSupplier() {
 		GatewayMvcProperties properties = Binder.get(env).bindOrCreate(GatewayMvcProperties.PREFIX,
 				GatewayMvcProperties.class);
 		log.trace(LogMessage.format("RouterFunctionHolder initializing with %d map routes and %d list routes",
